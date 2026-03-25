@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MerchantPulse Report - {{ analysis['date'].strftime('%d %B %Y') }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .header .date {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        .content {
+            padding: 40px;
+        }
+        .section {
+            margin-bottom: 35px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .metric-label {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .trend {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .trend.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+        .trend.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .product-list, .alert-list, .anomaly-list {
+            list-style: none;
+        }
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+        }
+        .product-rank {
+            width: 28px;
+            height: 28px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            margin-right: 12px;
+        }
+        .product-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        .product-stats {
+            text-align: right;
+        }
+        .product-units {
+            font-size: 13px;
+            color: #666;
+        }
+        .product-revenue {
+            font-weight: 600;
+            color: #667eea;
+        }
+        .alert-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .alert-item.red {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .alert-item.yellow {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .alert-item.green {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .alert-icon {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+        .alert-product {
+            flex: 1;
+            font-weight: 500;
+        }
+        .alert-stock {
+            font-size: 14px;
+            color: #666;
+            margin-right: 15px;
+        }
+        .alert-message {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .anomaly-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .anomaly-icon {
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        .anomaly-text {
+            font-weight: 500;
+        }
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .recommendation-icon {
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        .recommendation-text {
+            font-weight: 500;
+            color: #1a1a2e;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            border: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: #e9ecef;
+            color: #1a1a2e;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+            }
+            .actions {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 MerchantPulse Daily Report</h1>
+            <div class="date">{{ analysis['date'].strftime('%A, %d %B %Y') }}</div>
+        </div>
+
+        <div class="content">
+            <!-- Revenue Summary -->
+            <div class="section">
+                <div class="section-title">💰 Revenue Summary</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">{{ revenue['total_orders'] }}</div>
+                        <div class="metric-label">Total Orders</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ format_currency(revenue['gross_revenue']) }}</div>
+                        <div class="metric-label">Gross Revenue</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ format_currency(revenue['avg_order_value']) }}</div>
+                        <div class="metric-label">Avg Order Value</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">
+                            {% if revenue.get('vs_yesterday_pct', 0) > 0 %}
+                                +{{ revenue['vs_yesterday_pct']|round(1) }}%
+                            {% elif revenue.get('vs_yesterday_pct', 0) < 0 %}
+                                {{ revenue['vs_yesterday_pct']|round(1) }}%
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                        <div class="metric-label">vs Yesterday</div>
+                        {% if revenue.get('vs_yesterday_direction') %}
+                            <div class="trend {{ 'positive' if revenue.get('vs_yesterday_pct', 0) > 0 else 'negative' }}">
+                                {{ revenue.get('vs_yesterday_direction', '') }} {{ revenue.get('vs_yesterday_pct', 0)|round(1) }}%
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Products -->
+            <div class="section">
+                <div class="section-title">🏆 Top 5 Products</div>
+                <ul class="product-list">
+                    {% if top_products %}
+                        {% for p in top_products %}
+                            <li class="product-item">
+                                <div style="display: flex; align-items: center;">
+                                    <span class="product-rank">{{ loop.index }}</span>
+                                    <span class="product-name">{{ p['name'] }}</span>
+                                </div>
+                                <div class="product-stats">
+                                    <div class="product-units">{{ p['units'] }} units</div>
+                                    <div class="product-revenue">{{ format_currency(p['revenue']) }}</div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="product-item">No products sold today</li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Inventory Alerts -->
+            <div class="section">
+                <div class="section-title">⚠️ Inventory Alerts</div>
+                <ul class="alert-list">
+                    {% if inventory_alerts %}
+                        {% for alert in inventory_alerts[:5] %}
+                            <li class="alert-item {{ alert['priority'] }}">
+                                <span class="alert-icon">
+                                    {% if alert['priority'] == 'red' %}🔴
+                                    {% elif alert['priority'] == 'yellow' %}🟡
+                                    {% else %}🟢
+                                    {% endif %}
+                                </span>
+                                <span class="alert-product">{{ alert['product'] }}</span>
+                                <span class="alert-stock">{{ alert['stock_level'] }} units</span>
+                                <span class="alert-message" style="color: {% if alert['priority'] == 'red' %}#dc3545{% elif alert['priority'] == 'yellow' %}#856404{% else %}#155724{% endif %}">
+                                    {{ alert['message'] }}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="alert-item green">
+                            <span class="alert-icon">✅</span>
+                            <span class="alert-product">No critical inventory alerts</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Anomalies -->
+            <div class="section">
+                <div class="section-title">🔍 Anomalies Detected</div>
+                <ul class="anomaly-list">
+                    {% if anomalies %}
+                        {% for a in anomalies %}
+                            <li class="anomaly-item">
+                                <span class="anomaly-icon">⚡</span>
+                                <span class="anomaly-text">
+                                    {% if a['type'] == 'high_value' %}
+                                        Order #{{ a['order_id'] }} — {{ format_currency(a['total']) }} — {{ a['message'] }}
+                                    {% else %}
+                                        {{ a['message'] }}
+                                    {% endif %}
+                                </span>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="anomaly-item" style="background: #d4edda;">
+                            ✅ No anomalies detected
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="section">
+                <div class="section-title">💡 Recommended Actions</div>
+                {% if recommendations %}
+                    {% for rec in recommendations %}
+                        <div class="recommendation-item">
+                            <span class="recommendation-icon">→</span>
+                            <span class="recommendation-text">{{ rec }}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="recommendation-item">
+                        No specific recommendations at this time
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="actions">
+                <a href="{{ url_for('select_date', session_id=session_id) }}" class="btn btn-secondary">← Select Another Date</a>
+                <button onclick="window.print()" class="btn btn-primary">🖨️ Print Report</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">New Upload</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            Generated by MerchantPulse • {{ analysis['date'].strftime('%H:%M:%S') }}
+        </div>
+    </div>
+</body>
+</html>
